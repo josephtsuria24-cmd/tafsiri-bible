@@ -3,27 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bible Study App Pro</title>
+<title>Bible Study App Pro Max</title>
 <style>
 :root { --bg:#fff8e1; --card:white; --text:#333; --main:#e65100; }
 body.dark { --bg:#121212; --card:#1e1e1e; --text:#eee; --main:#ff9800; }
 body{font-family:Arial;background:var(--bg);color:var(--text);padding:20px;margin:0;transition:0.3s}
-.box{background:var(--card);padding:25px;border-radius:20px;max-width:800px;margin:auto;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
+.box{background:var(--card);padding:25px;border-radius:20px;max-width:900px;margin:auto;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
 h1{color:var(--main)}
 .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
-.btn{background:var(--main);color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer;font-weight:bold}
+.btn{background:var(--main);color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer;font-weight:bold;margin:5px}
 textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main);border-radius:10px;margin:10px 0;background:var(--bg);color:var(--text)}
 #result{font-size:18px;margin:20px 0;padding:15px;background:var(--bg);border-radius:10px;text-align:left;white-space:pre-wrap;line-height:1.7;min-height:100px}
-.tabs{display:flex;gap:10px;margin:15px 0}
-.tab{flex:1;padding:10px;border:none;border-radius:8px;background:gray;color:white;cursor:pointer}
+.tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap}
+.tab{flex:1;padding:10px;border:none;border-radius:8px;background:gray;color:white;cursor:pointer;min-width:120px}
 .tab.active{background:var(--main)}
+.note-box{width:95%;min-height:80px;margin-top:10px}
 .bookmarks{margin-top:20px;text-align:left}
 </style>
 </head>
 <body>
 <div class="box">
 <div class="top-bar">
-<h1>📖 Bible Study Pro</h1>
+<h1>📖 Bible Study Pro Max</h1>
 <button class="btn" onclick="toggleDark()">🌙</button>
 </div>
 
@@ -31,15 +32,22 @@ textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main
 <button id="tab1" class="tab active" onclick="showTab('translate')">Translate</button>
 <button id="tab2" class="tab" onclick="showTab('dictionary')">Dictionary</button>
 <button id="tab3" class="tab" onclick="showTab('bookmarks')">Bookmarks</button>
+<button id="tab4" class="tab" onclick="showTab('bible')">Bible Search</button>
 </div>
 
-<!-- TAB 1: TRANSLATE -->
+<!-- TAB 1: TRANSLATE + AUDIO + NOTES -->
 <div id="translate">
 <textarea id="text" placeholder="Paste Bible verse or paragraph here... 
 Example: John 3:16 For God so loved the world..."></textarea>
-<button class="btn" onclick="translate()">Translate to Swahili</button>
+<div>
+<button class="btn" onclick="translate()">🌍 Translate</button>
+<button class="btn" onclick="speak()">🔊 Speak</button>
+<button class="btn" onclick="saveBookmark()">⭐ Save</button>
+</div>
 <div id="result"></div>
-<button class="btn" onclick="saveBookmark()">⭐ Save Bookmark</button>
+
+<h3>📝 My Notes</h3>
+<textarea id="notes" class="note-box" placeholder="Write your study notes here..." onkeyup="saveNotes()"></textarea>
 </div>
 
 <!-- TAB 2: DICTIONARY -->
@@ -51,8 +59,15 @@ Example: John 3:16 For God so loved the world..."></textarea>
 
 <!-- TAB 3: BOOKMARKS -->
 <div id="bookmarks" style="display:none">
-<h3>Your Saved Verses</h3>
+<h3>Your Saved Verses + Notes</h3>
 <div id="bookmarkList" class="bookmarks"></div>
+</div>
+
+<!-- TAB 4: BIBLE SEARCH -->
+<div id="bible" style="display:none">
+<input id="bibleSearch" placeholder="Search: love, faith, John 3:16">
+<button class="btn" onclick="bibleSearch()">🔍 Search Bible</button>
+<div id="bibleResult"></div>
 </div>
 
 </div>
@@ -61,16 +76,27 @@ Example: John 3:16 For God so loved the world..."></textarea>
 // OFFLINE DICTIONARY 500+
 const dict = {"god":"mungu","lord":"bwana","jesus":"yesu","faith":"imani","love":"upendo","grace":"neema","mercy":"rehema","salvation":"wokovu","pray":"omba","bible":"biblia","heaven":"mbinguni","sin":"dhambi","forgive":"samehe","peace":"amani","joy":"furaha","spirit":"roho","holy":"mtakatifu","word":"neno","truth":"kweli","life":"uzima","eternal":"wa milele","cross":"msalaba","bless":"bariki","church":"kanisa","angel":"malaika"};
 
+// SAMPLE BIBLE VERSES - You can add 100 more
+const bible = {
+"john 3:16": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+"psalm 23:1": "The Lord is my shepherd, I lack nothing.",
+"philippians 4:13": "I can do all this through him who gives me strength.",
+"jeremiah 29:11": "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you."
+};
+
 let bookmarks = JSON.parse(localStorage.getItem('bibleBookmarks')) || [];
+let notes = localStorage.getItem('bibleNotes') || "";
+
+document.getElementById('notes').value = notes;
 
 function showTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#translate, #dictionary, #bookmarks, #bible').forEach(d=>d.style.display='none');
   document.getElementById('tab1').classList.toggle('active', tab==='translate');
   document.getElementById('tab2').classList.toggle('active', tab==='dictionary');
   document.getElementById('tab3').classList.toggle('active', tab==='bookmarks');
-  document.getElementById('translate').style.display = tab==='translate'?'block':'none';
-  document.getElementById('dictionary').style.display = tab==='dictionary'?'block':'none';
-  document.getElementById('bookmarks').style.display = tab==='bookmarks'?'block':'none';
+  document.getElementById('tab4').classList.toggle('active', tab==='bible');
+  document.getElementById(tab).style.display = 'block';
   if(tab==='bookmarks') loadBookmarks();
 }
 
@@ -86,21 +112,50 @@ async function translate(){
   } catch(e) { document.getElementById('result').innerText = "No internet. Use Dictionary tab"; }
 }
 
+function speak(){
+  let text = document.getElementById('result').innerText;
+  if(text){
+    let speech = new SpeechSynthesisUtterance(text);
+    speech.lang = 'sw-TZ'; // Swahili voice
+    speech.rate = 0.9;
+    window.speechSynthesis.speak(speech);
+  }
+}
+
 function dictSearch(){
   let w = document.getElementById('word').value.toLowerCase();
   document.getElementById('dictResult').innerText = dict[w] || "Word not found. Try: faith, love, god";
 }
 
+function bibleSearch(){
+  let q = document.getElementById('bibleSearch').value.toLowerCase();
+  let found = [];
+  for(let key in bible){
+    if(key.includes(q) || bible[key].toLowerCase().includes(q)){
+      found.push(`<b>${key.toUpperCase()}</b><br>${bible[key]}<br><br>`);
+    }
+  }
+  document.getElementById('bibleResult').innerHTML = found.join('') || "Verse not found. Try: john 3:16, psalm 23";
+}
+
 function saveBookmark(){
   let verse = document.getElementById('result').innerText;
+  let note = document.getElementById('notes').value;
   if(verse && verse !== "Translating..."){ 
-    bookmarks.push(verse); 
+    bookmarks.push({verse: verse, note: note}); 
     localStorage.setItem('bibleBookmarks', JSON.stringify(bookmarks));
-    alert("Saved!");
+    alert("Saved with notes!");
   }
 }
 function loadBookmarks(){
-  document.getElementById('bookmarkList').innerHTML = bookmarks.map((b,i)=>`<p>${i+1}. ${b}</p>`).join('') || "No bookmarks yet";
+  document.getElementById('bookmarkList').innerHTML = bookmarks.map((b,i)=>`
+    <div style="border-bottom:1px solid gray;padding:10px 0">
+    <b>${i+1}.</b> ${b.verse}<br>
+    <i>Notes: ${b.note || 'None'}</i>
+    </div>`).join('') || "No bookmarks yet";
+}
+function saveNotes(){
+  localStorage.setItem('bibleNotes', document.getElementById('notes').value);
 }
 function toggleDark(){ document.body.classList.toggle('dark'); }
 </script>
