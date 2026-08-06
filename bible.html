@@ -8,16 +8,110 @@
 
 
 
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Bible Study Pro Max</title>
-<style>body{font-family:Arial;background:#fff8e1;padding:20px}.box{background:white;padding:25px;border-radius:20px;max-width:900px;margin:auto} h1{color:#e65100}.btn{background:#e65100;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer;font-weight:bold;margin:5px} textarea{width:95%;padding:12px;font-size:16px;border:2px solid #e65100;border-radius:10px} #result{font-size:18px;margin:20px 0;padding:15px;background:#fff8e1;border-radius:10px;min-height:50px}</style>
-</head><body><div class="box"><h1>📖 Bible Study Pro Max</h1>
-<textarea id="text" placeholder="Type: He is risen"></textarea><br>
-<button class="btn" onclick="translate()">🌍 Translate</button>
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bible Study Pro Max - Online</title>
+<style>
+body{font-family:Arial;background:#fff8e1;padding:20px;margin:0}
+.box{background:white;padding:25px;border-radius:20px;max-width:900px;margin:auto;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
+h1{color:#e65100}
+.btn{background:#e65100;color:white;border:none;padding:12px 18px;border-radius:8px;cursor:pointer;font-weight:bold;margin:5px;font-size:16px}
+textarea{width:95%;padding:12px;font-size:16px;border:2px solid #e65100;border-radius:10px}
+#result{font-size:22px;margin:20px 0;padding:15px;background:#fff8e1;border-radius:10px;min-height:50px;color:#e65100;font-weight:bold}
+.network{background:#e8f5e9;padding:10px;border-radius:10px;margin:10px 0;font-size:14px}
+.online{color:green}.offline{color:red}
+.provider{display:inline-block;background:#ffe0b2;padding:5px 10px;border-radius:20px;margin:3px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>📖 Bible Study Pro Max - ONLINE</h1>
+
+<div class="network" id="networkStatus">Checking network...</div>
+
+<h3>Translate English > Swahili</h3>
+<textarea id="text" placeholder="he is risen"></textarea><br>
+<button class="btn" onclick="translate()">🌍 Translate Online</button>
 <button class="btn" onclick="speak()">🔊 Speak</button>
-<div id="result"></div></div>
+<div id="result"></div>
+
+<p style="font-size:12px;color:gray">Requires internet: WiFi, Safaricom, Airtel, Telkom</p>
+</div>
+
 <script>
-const translator={"he is risen":"amefufuka","god loves you":"mungu anakupenda","jesus is lord":"yesu ni bwana","amen":"amina"};
-function translate(){let t=document.getElementById('text').value.toLowerCase().trim();document.getElementById('result').innerText=translator[t]||"Not found. Try: he is risen, god loves you"}
-function speak(){let t=document.getElementById('result').innerText;let s=new SpeechSynthesisUtterance(t);s.lang='sw-TZ';speechSynthesis.speak(s)}
-</script></body></html>
+// OFFLINE FALLBACK DICTIONARY
+const offlineDict = {
+"he is risen": "amefufuka",
+"god loves you": "mungu anakupenda", 
+"jesus is lord": "yesu ni bwana",
+"amen": "amina"
+};
+
+// CHECK NETWORK + PROVIDER
+function checkNetwork(){
+  const status = document.getElementById('networkStatus');
+  let html = '';
+  
+  if(navigator.onLine){
+    html += `<span class="online">✅ Online</span><br>`;
+    
+    // Try to detect connection type
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if(conn){
+      if(conn.type === 'wifi') html += `<span class="provider">📶 WiFi</span>`;
+      else if(conn.type === 'cellular') html += `<span class="provider">📱 Mobile Data</span>`;
+    }
+    
+    // Common KE providers - we can't detect exact provider from browser, but we show options
+    html += `<span class="provider">Safaricom</span>`;
+    html += `<span class="provider">Airtel</span>`;
+    html += `<span class="provider">Telkom</span>`;
+    
+  } else {
+    html += `<span class="offline">❌ Offline - Using Dictionary Mode</span>`;
+  }
+  status.innerHTML = html;
+}
+
+window.addEventListener('online', checkNetwork);
+window.addEventListener('offline', checkNetwork);
+checkNetwork();
+
+// ONLINE TRANSLATE FUNCTION
+async function translate(){
+  let t = document.getElementById('text').value.toLowerCase().trim();
+  let resultBox = document.getElementById('result');
+  
+  if(!navigator.onLine){
+    // Use offline dictionary if no internet
+    resultBox.innerText = offlineDict[t] || "Offline: Not in dictionary. Connect to WiFi/Mobile Data";
+    return;
+  }
+  
+  resultBox.innerText = "Translating...";
+  
+  try{
+    // Online API - works on Vercel/Netlify, on GitHub it may be blocked sometimes
+    let res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(t)}&langpair=en|sw`);
+    let data = await res.json();
+    resultBox.innerText = data.responseData.translatedText;
+  }catch(e){
+    // If API fails, use offline
+    resultBox.innerText = offlineDict[t] || "API Blocked on GitHub. Use: he is risen";
+  }
+}
+
+function speak(){
+  let text = document.getElementById('result').innerText;
+  let s = new SpeechSynthesisUtterance(text);
+  s.lang = 'sw-TZ';
+  s.rate = 0.9;
+  speechSynthesis.speak(s);
+}
+</script>
+</body>
+</html>
