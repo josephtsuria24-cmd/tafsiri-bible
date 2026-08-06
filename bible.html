@@ -35,16 +35,19 @@ textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main
 <button id="tab4" class="tab" onclick="showTab('bible')">Bible Search</button>
 </div>
 
-<!-- TAB 1: TRANSLATE + AUDIO + NOTES -->
-<div id="translate">
-<textarea id="text" placeholder="Paste Bible verse or paragraph here... 
-Example: John 3:16 For God so loved the world..."></textarea>
-<div>
-<button class="btn" onclick="translate()">🌍 Translate</button>
-<button class="btn" onclick="speak()">🔊 Speak</button>
-<button class="btn" onclick="saveBookmark()">⭐ Save</button>
-</div>
-<div id="result"></div>
+async function translate(){
+  let text = document.getElementById('text').value.trim();
+  if(!text) return alert("Please type something first");
+  document.getElementById('result').innerText = "Translating...";
+  try {
+    let url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=sw&dt=t&q=${encodeURIComponent(text)}`;
+    let res = await fetch(url);
+    let data = await res.json();
+    document.getElementById('result').innerText = data[0][0][0];
+  } catch(e) { 
+    document.getElementById('result').innerText = "No internet. Use Dictionary tab for offline words"; 
+  }
+}
 
 <h3>📝 My Notes</h3>
 <textarea id="notes" class="note-box" placeholder="Write your study notes here..." onkeyup="saveNotes()"></textarea>
