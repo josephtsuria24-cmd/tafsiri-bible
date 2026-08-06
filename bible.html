@@ -7,22 +7,23 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bible Study App Pro Max OFFLINE</title>
+<title>Bible Study App Pro Max</title>
 <style>
 :root { --bg:#fff8e1; --card:white; --text:#333; --main:#e65100; }
 body.dark { --bg:#121212; --card:#1e1e1e; --text:#eee; --main:#ff9800; }
 body{font-family:Arial;background:var(--bg);color:var(--text);padding:20px;margin:0}
-.box{background:var(--card);padding:25px;border-radius:20px;max-width:900px;margin:auto;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
+.box{background:var(--card);padding:25px;border-radius:20px;max-width:900px;margin:auto}
 h1{color:var(--main)}
 .btn{background:var(--main);color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer;font-weight:bold;margin:5px}
 textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main);border-radius:10px;margin:10px 0;background:var(--bg);color:var(--text)}
 #result{font-size:18px;margin:20px 0;padding:15px;background:var(--bg);border-radius:10px;min-height:50px}
-.tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap}
+.tabs{display:flex;gap:10px;margin:15px 0}
 .tab{flex:1;padding:10px;border:none;border-radius:8px;background:gray;color:white;cursor:pointer}
 .tab.active{background:var(--main)}
 </style>
@@ -35,98 +36,41 @@ textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main
 </div>
 
 <div class="tabs">
-<button id="tab1" class="tab active" onclick="showTab('translate')">Translate</button>
-<button id="tab2" class="tab" onclick="showTab('dictionary')">Dictionary</button>
-<button id="tab3" class="tab" onclick="showTab('bible')">Bible Verses</button>
+<button class="tab active" onclick="showTab('translate')">Translate</button>
+<button class="tab" onclick="showTab('dictionary')">Dictionary</button>
+<button class="tab" onclick="showTab('bible')">Bible Verses</button>
 </div>
 
 <div id="translate">
-<textarea id="text" placeholder="Type Bible phrase: He is risen, God loves you..."></textarea>
+<textarea id="text" placeholder="Type: He is risen"></textarea>
 <button class="btn" onclick="translate()">🌍 Translate</button>
 <button class="btn" onclick="speak()">🔊 Speak</button>
 <div id="result"></div>
 </div>
 
 <div id="dictionary" style="display:none">
-<input id="word" placeholder="Type word: faith, love, grace...">
+<input id="word" placeholder="Type word: faith, love">
 <button class="btn" onclick="dictSearch()">Search</button>
 <div id="dictResult"></div>
 </div>
 
 <div id="bible" style="display:none">
-<input id="bibleSearch" placeholder="Search: love, faith, mark 16:6 or mark16.6">
+<input id="bibleSearch" placeholder="Search: mark16.6, john3:16">
 <button class="btn" onclick="bibleSearch()">🔍 Search</button>
 <div id="bibleResult"></div>
 </div>
 
 </div>
-
 <script>
-// OFFLINE BIBLE PHRASE TRANSLATOR
-const translator = {
-"he is risen":"amefufuka",
-"god loves you":"mungu anakupenda",
-"jesus is lord":"yesu ni bwana",
-"for god so loved the world":"kwa maana mungu aliupenda ulimwengu",
-"the lord is my shepherd":"bwana ni mchungaji wangu",
-"i can do all things":"naweza mambo yote",
-"peace be with you":"amani iwe nawe",
-"hallelujah":"haleluya",
-"amen":"amina"
-};
+const translator = {"he is risen":"amefufuka","god loves you":"mungu anakupenda","jesus is lord":"yesu ni bwana","amen":"amina"};
+const dict = {"god":"mungu","lord":"bwana","jesus":"yesu","faith":"imani","love":"upendo","grace":"neema","risen":"amefufuka"};
+const bible = {"mark16:6":"He is risen! He is not here. / Amefufuka! Hayupo hapa.","john3:16":"For God so loved the world... / Kwa maana mungu aliupenda ulimwengu..."};
 
-const dict = {"god":"mungu","lord":"bwana","jesus":"yesu","faith":"imani","love":"upendo","grace":"neema","mercy":"rehema","salvation":"wokovu","pray":"omba","risen":"amefufuka","heaven":"mbinguni","peace":"amani","joy":"furaha","spirit":"roho","holy":"mtakatifu","word":"neno","truth":"kweli","life":"uzima","cross":"msalaba","bless":"bariki"};
-
-const bible = {
-"mark 16:6": "He is risen! He is not here. / Amefufuka! Hayupo hapa.",
-"mark16:6": "He is risen! He is not here. / Amefufuka! Hayupo hapa.",
-"mark 16 6": "He is risen! He is not here. / Amefufuka! Hayupo hapa.",
-"john 3:16": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life. / Kwa maana mungu aliupenda ulimwengu...",
-"john3:16": "For God so loved the world... / Kwa maana mungu aliupenda ulimwengu...",
-"psalm 23:1": "The Lord is my shepherd, I lack nothing. / Bwana ni mchungaji wangu, sipati upungufu.",
-"philippians 4:13": "I can do all this through him who gives me strength. / Naweza mambo yote katika yeye anitiazaye nguvu."
-};
-
-function showTab(tab){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('#translate, #dictionary, #bible').forEach(d=>d.style.display='none');
-  document.getElementById('tab1').classList.toggle('active', tab==='translate');
-  document.getElementById('tab2').classList.toggle('active', tab==='dictionary');
-  document.getElementById('tab3').classList.toggle('active', tab==='bible');
-  document.getElementById(tab).style.display = 'block';
-}
-
-function translate(){
-  let text = document.getElementById('text').value.toLowerCase().trim();
-  if(!text) return alert("Please type something first");
-  let result = translator[text] || "Phrase not in offline dictionary yet. Try: 'he is risen', 'god loves you'";
-  document.getElementById('result').innerText = result;
-}
-
-function speak(){
-  let text = document.getElementById('result').innerText;
-  let speech = new SpeechSynthesisUtterance(text);
-  speech.lang = 'sw-TZ';
-  speech.rate = 0.9;
-  window.speechSynthesis.speak(speech);
-}
-
-function dictSearch(){
-  let w = document.getElementById('word').value.toLowerCase();
-  document.getElementById('dictResult').innerText = dict[w] || "Word not found. Try: faith, love, god";
-}
-
-function bibleSearch(){
-  let q = document.getElementById('bibleSearch').value.toLowerCase().replace(/\./g,':').replace(/\s+/g,' ');
-  // this makes "mark16.6" = "mark 16:6"
-  let found = [];
-  for(let key in bible){
-    if(key.includes(q) || q.includes(key) || bible[key].toLowerCase().includes(q)){
-      found.push(`<b>${key.toUpperCase()}</b><br>${bible[key]}<br><br>`);
-    }
-  }
-  document.getElementById('bibleResult').innerHTML = found.join('') || "Verse not found. Try: mark 16:6, john 3:16";
-}
+function showTab(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('#translate, #dictionary, #bible').forEach(d=>d.style.display='none');event.target.classList.add('active');document.getElementById(tab).style.display='block'}
+function translate(){let t=document.getElementById('text').value.toLowerCase().trim();document.getElementById('result').innerText=translator[t]||"Not found. Try: he is risen"}
+function speak(){let t=document.getElementById('result').innerText;let s=new SpeechSynthesisUtterance(t);s.lang='sw-TZ';speechSynthesis.speak(s)}
+function dictSearch(){let w=document.getElementById('word').value.toLowerCase();document.getElementById('dictResult').innerText=dict[w]||"Not found"}
+function bibleSearch(){let q=document.getElementById('bibleSearch').value.toLowerCase().replace(/\./g,'');document.getElementById('bibleResult').innerHTML=bible[q]||"Not found. Try: mark16:6"}
 </script>
 </body>
 </html>
