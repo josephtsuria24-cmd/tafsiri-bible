@@ -1,7 +1,10 @@
 
 
  
-   <!DOCTYPE html>
+    
+
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -21,7 +24,6 @@ textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main
 .tab{flex:1;padding:10px;border:none;border-radius:8px;background:gray;color:white;cursor:pointer;min-width:120px}
 .tab.active{background:var(--main)}
 .note-box{width:95%;min-height:80px;margin-top:10px}
-.bookmarks{margin-top:20px;text-align:left}
 </style>
 </head>
 <body>
@@ -38,35 +40,29 @@ textarea,input{width:95%;padding:12px;font-size:16px;border:2px solid var(--main
 <button id="tab4" class="tab" onclick="showTab('bible')">Bible Search</button>
 </div>
 
-<!-- TAB 1: TRANSLATE + AUDIO + NOTES -->
 <div id="translate">
-<textarea id="text" placeholder="Paste Bible verse or paragraph here... 
-Example: He is risen"></textarea>
+<textarea id="text" placeholder="Paste Bible verse here... Example: He is risen"></textarea>
 <div>
 <button class="btn" onclick="translate()">🌍 Translate</button>
 <button class="btn" onclick="speak()">🔊 Speak</button>
 <button class="btn" onclick="saveBookmark()">⭐ Save</button>
 </div>
 <div id="result"></div>
-
 <h3>📝 My Notes</h3>
 <textarea id="notes" class="note-box" placeholder="Write your study notes here..." onkeyup="saveNotes()"></textarea>
 </div>
 
-<!-- TAB 2: DICTIONARY -->
 <div id="dictionary" style="display:none">
 <input id="word" placeholder="Type Bible word: faith, love, grace...">
 <button class="btn" onclick="dictSearch()">Search</button>
 <div id="dictResult"></div>
 </div>
 
-<!-- TAB 3: BOOKMARKS -->
 <div id="bookmarks" style="display:none">
 <h3>Your Saved Verses + Notes</h3>
-<div id="bookmarkList" class="bookmarks"></div>
+<div id="bookmarkList"></div>
 </div>
 
-<!-- TAB 4: BIBLE SEARCH -->
 <div id="bible" style="display:none">
 <input id="bibleSearch" placeholder="Search: love, faith, John 3:16">
 <button class="btn" onclick="bibleSearch()">🔍 Search Bible</button>
@@ -76,18 +72,8 @@ Example: He is risen"></textarea>
 </div>
 
 <script>
-// OFFLINE DICTIONARY 
-const dict = {"god":"mungu","lord":"bwana","jesus":"yesu","faith":"imani","love":"upendo","grace":"neema","mercy":"rehema","salvation":"wokovu","pray":"omba","bible":"biblia","heaven":"mbinguni","sin":"dhambi","forgive":"samehe","peace":"amani","joy":"furaha","spirit":"roho","holy":"mtakatifu","word":"neno","truth":"kweli","life":"uzima","eternal":"wa milele","cross":"msalaba","bless":"bariki","church":"kanisa","angel":"malaika","risen":"amefufuka"};
-
-// SAMPLE BIBLE VERSES
-const bible = {
-"john 3:16": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
-"psalm 23:1": "The Lord is my shepherd, I lack nothing.",
-"philippians 4:13": "I can do all this through him who gives me strength.",
-"jeremiah 29:11": "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you.",
-"mark 16:6": "He is risen! He is not here."
-};
-
+const dict = {"god":"mungu","lord":"bwana","jesus":"yesu","faith":"imani","love":"upendo","grace":"neema","mercy":"rehema","salvation":"wokovu","pray":"omba","risen":"amefufuka"};
+const bible = {"john 3:16": "For God so loved the world...", "mark 16:6": "He is risen! He is not here."};
 let bookmarks = JSON.parse(localStorage.getItem('bibleBookmarks')) || [];
 let notes = localStorage.getItem('bibleNotes') || "";
 document.getElementById('notes').value = notes;
@@ -108,11 +94,11 @@ async function translate(){
   if(!text) return alert("Please type something first");
   document.getElementById('result').innerText = "Translating...";
   try {
-    let url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=sw&dt=t&q=${encodeURIComponent(text)}`;
+    let url = `https://lingva.ml/api/v1/en/sw/${encodeURIComponent(text)}`;
     let res = await fetch(url);
     let data = await res.json();
-    document.getElementById('result').innerText = data[0][0][0];
-  } catch(e) { document.getElementById('result').innerText = "No internet. Use Dictionary tab for offline words"; }
+    document.getElementById('result').innerText = data.translation;
+  } catch(e) { document.getElementById('result').innerText = "Error. Check internet. Dictionary works offline."; }
 }
 
 function speak(){
@@ -124,12 +110,10 @@ function speak(){
     window.speechSynthesis.speak(speech);
   }
 }
-
 function dictSearch(){
   let w = document.getElementById('word').value.toLowerCase();
-  document.getElementById('dictResult').innerText = dict[w] || "Word not found. Try: faith, love, god, risen";
+  document.getElementById('dictResult').innerText = dict[w] || "Word not found. Try: faith, love, god";
 }
-
 function bibleSearch(){
   let q = document.getElementById('bibleSearch').value.toLowerCase();
   let found = [];
@@ -138,28 +122,21 @@ function bibleSearch(){
       found.push(`<b>${key.toUpperCase()}</b><br>${bible[key]}<br><br>`);
     }
   }
-  document.getElementById('bibleResult').innerHTML = found.join('') || "Verse not found. Try: john 3:16, mark 16:6";
+  document.getElementById('bibleResult').innerHTML = found.join('') || "Verse not found. Try: mark 16:6";
 }
-
 function saveBookmark(){
   let verse = document.getElementById('result').innerText;
   let note = document.getElementById('notes').value;
   if(verse && verse !== "Translating..."){ 
     bookmarks.push({verse: verse, note: note}); 
     localStorage.setItem('bibleBookmarks', JSON.stringify(bookmarks));
-    alert("Saved with notes!");
+    alert("Saved!");
   }
 }
 function loadBookmarks(){
-  document.getElementById('bookmarkList').innerHTML = bookmarks.map((b,i)=>`
-    <div style="border-bottom:1px solid gray;padding:10px 0">
-    <b>${i+1}.</b> ${b.verse}<br>
-    <i>Notes: ${b.note || 'None'}</i>
-    </div>`).join('') || "No bookmarks yet";
+  document.getElementById('bookmarkList').innerHTML = bookmarks.map((b,i)=>`<div style="border-bottom:1px solid gray;padding:10px 0"><b>${i+1}.</b> ${b.verse}<br><i>Notes: ${b.note || 'None'}</i></div>`).join('') || "No bookmarks yet";
 }
-function saveNotes(){
-  localStorage.setItem('bibleNotes', document.getElementById('notes').value);
-}
+function saveNotes(){ localStorage.setItem('bibleNotes', document.getElementById('notes').value); }
 function toggleDark(){ document.body.classList.toggle('dark'); }
 </script>
 </body>
